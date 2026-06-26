@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeonQuest</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="bgCanvas"></canvas>
+
+  <!-- LOADING SCREEN -->
+  <div id="screen-loading" class="screen active">
+    <div class="loading-logo">
+      <span class="logo-neon">NEON</span><span class="logo-quest">QUEST</span>
+    </div>
+    <div class="loading-studio">by NeonStudio — Season 1</div>
+    <div class="loading-bar-wrap">
+      <div class="loading-bar-track">
+        <div class="loading-bar-fill" id="loadBarFill"></div>
+        <div class="loading-bar-glow" id="loadBarGlow"></div>
+      </div>
+      <div class="loading-percent" id="loadPercent">0%</div>
+    </div>
+    <div class="loading-status" id="loadStatus">Initialisiere Engine...</div>
+    <div class="loading-tip" id="loadTip">💡 Tipp: Bewege dich mit WASD, schieße mit der Maus!</div>
+    <div class="loading-anykey" id="loadAnyKey" style="opacity:0">▶ Drücke eine beliebige Taste zum Starten</div>
+  </div>
+
+  <!-- MAIN MENU -->
+  <div id="screen-menu" class="screen">
+    <div class="menu-left">
+      <div class="menu-logo">
+        <span class="logo-neon">NEON</span><span class="logo-quest">QUEST</span>
+        <div class="menu-season-badge">SEASON 1</div>
+      </div>
+      <nav class="menu-nav">
+        <button class="menu-btn active" onclick="menuNav('play')">
+          <span class="btn-icon">⚔️</span> Spielen
+        </button>
+        <button class="menu-btn" onclick="menuNav('shop')">
+          <span class="btn-icon">🛒</span> Shop
+        </button>
+        <button class="menu-btn" onclick="menuNav('season')">
+          <span class="btn-icon">🏆</span> Season Pass
+        </button>
+        <button class="menu-btn" onclick="menuNav('settings')">
+          <span class="btn-icon">⚙️</span> Einstellungen
+        </button>
+      </nav>
+      <div class="menu-currency">
+        <span class="currency-icon">⭐</span>
+        <span id="menuStars">0</span> Sterne
+      </div>
+    </div>
+
+    <!-- PLAY PANEL -->
+    <div class="menu-panel active" id="panel-play">
+      <h2 class="panel-title">Spielmodus wählen</h2>
+      <div class="mode-grid">
+        <div class="mode-card" onclick="selectMode('solo')">
+          <div class="mode-icon">🎯</div>
+          <div class="mode-name">Solo</div>
+          <div class="mode-desc">Alleine gegen Wellen</div>
+          <div class="mode-badge">CLASSIC</div>
+        </div>
+        <div class="mode-card" onclick="selectMode('blitz')">
+          <div class="mode-icon">⚡</div>
+          <div class="mode-name">Blitz</div>
+          <div class="mode-desc">2 Minuten Highscore</div>
+          <div class="mode-badge new">NEU</div>
+        </div>
+        <div class="mode-card" onclick="selectMode('survival')">
+          <div class="mode-icon">💀</div>
+          <div class="mode-name">Survival</div>
+          <div class="mode-desc">Unendliche Wellen</div>
+          <div class="mode-badge hard">HARD</div>
+        </div>
+        <div class="mode-card" onclick="selectMode('online')">
+          <div class="mode-icon">🌐</div>
+          <div class="mode-name">Online</div>
+          <div class="mode-desc">Host oder joinen</div>
+          <div class="mode-badge multi">MULTI</div>
+        </div>
+      </div>
+      <div id="online-panel" style="display:none">
+        <div class="online-options">
+          <input type="text" id="playerNameInput" placeholder="Dein Name" maxlength="16" />
+          <button class="btn-primary" onclick="hostGame()">🏠 Server hosten</button>
+          <div class="divider-or">oder</div>
+          <input type="text" id="joinCodeInput" placeholder="CODE eingeben" maxlength="6" style="text-transform:uppercase" />
+          <button class="btn-secondary" onclick="joinGame()">🔗 Joinen</button>
+        </div>
+        <div id="lobby-display" style="display:none">
+          <div class="lobby-code-box">
+            <span>Dein Code:</span>
+            <strong id="lobbyCodeText">-----</strong>
+            <button onclick="copyCode()">📋 Kopieren</button>
+          </div>
+          <div id="lobby-players"></div>
+          <button class="btn-primary" id="startGameBtn" onclick="startOnlineGame()" style="display:none">🚀 Spiel starten</button>
+        </div>
+        <div id="online-status" class="online-status"></div>
+      </div>
+      <div id="mode-selected" style="display:none">
+        <div class="selected-mode-info" id="selectedModeInfo"></div>
+        <button class="btn-start" onclick="startGame()">🚀 STARTEN</button>
+      </div>
+    </div>
+
+    <!-- SHOP PANEL -->
+    <div class="menu-panel" id="panel-shop">
+      <h2 class="panel-title">Shop <span class="currency-icon">⭐</span><span id="shopStars">0</span></h2>
+      <div class="shop-tabs">
+        <button class="shop-tab active" onclick="shopTab('weapons')">Waffen</button>
+        <button class="shop-tab" onclick="shopTab('boosts')">Boosts</button>
+        <button class="shop-tab" onclick="shopTab('skins')">Skins</button>
+      </div>
+      <div class="shop-grid" id="shopGrid"></div>
+    </div>
+
+    <!-- SEASON PASS PANEL -->
+    <div class="menu-panel" id="panel-season">
+      <h2 class="panel-title">Season 1 – Neon Eclipse</h2>
+      <div class="season-header">
+        <div class="season-xp-bar-wrap">
+          <div class="season-xp-label">Level <span id="seasonLevel">1</span> · <span id="seasonXP">0</span> / <span id="seasonXPNext">1000</span> XP</div>
+          <div class="season-xp-track">
+            <div class="season-xp-fill" id="seasonXPFill" style="width:0%"></div>
+          </div>
+        </div>
+        <button class="btn-premium" onclick="buyPremium()">👑 Premium – 500 ⭐</button>
+      </div>
+      <div class="season-track" id="seasonTrack"></div>
+    </div>
+
+    <!-- SETTINGS PANEL -->
+    <div class="menu-panel" id="panel-settings">
+      <h2 class="panel-title">Einstellungen</h2>
+      <div class="settings-list">
+        <div class="setting-row">
+          <span>Musik-Lautstärke</span>
+          <input type="range" min="0" max="100" value="60" id="musicVol" oninput="setMusicVol(this.value)" />
+          <span id="musicVolVal">60%</span>
+        </div>
+        <div class="setting-row">
+          <span>Effekte-Lautstärke</span>
+          <input type="range" min="0" max="100" value="80" id="sfxVol" oninput="setSfxVol(this.value)" />
+          <span id="sfxVolVal">80%</span>
+        </div>
+        <div class="setting-row">
+          <span>Partikel-Effekte</span>
+          <label class="toggle"><input type="checkbox" checked id="particlesOn" /><span></span></label>
+        </div>
+        <div class="setting-row">
+          <span>Crosshair-Stil</span>
+          <select id="crosshairStyle">
+            <option value="cross">Kreuz</option>
+            <option value="dot">Punkt</option>
+            <option value="circle">Kreis</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <span>Spieler-Name</span>
+          <input type="text" id="settingsName" placeholder="Dein Name" maxlength="16" />
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT INFO PANEL -->
+    <div class="menu-right">
+      <div class="info-box">
+        <div class="info-title">📊 Deine Stats</div>
+        <div class="info-row"><span>Highscore</span><strong id="infoHighscore">0</strong></div>
+        <div class="info-row"><span>Spiele</span><strong id="infoGames">0</strong></div>
+        <div class="info-row"><span>Kills</span><strong id="infoKills">0</strong></div>
+        <div class="info-row"><span>Season Level</span><strong id="infoLevel">1</strong></div>
+      </div>
+      <div class="info-box">
+        <div class="info-title">🎵 Musik</div>
+        <div class="music-player" id="musicPlayer">
+          <div class="music-track-name" id="trackName">Track 1</div>
+          <div class="music-controls">
+            <button onclick="prevTrack()">⏮</button>
+            <button onclick="toggleMusic()" id="playBtn">▶</button>
+            <button onclick="nextTrack()">⏭</button>
+          </div>
+          <input type="range" class="music-seek" id="seekBar" value="0" min="0" max="100" oninput="seekMusic(this.value)" />
+          <div class="music-time">
+            <span id="timeNow">0:00</span>
+            <span id="timeTotal">0:00</span>
+          </div>
+        </div>
+      </div>
+      <div class="info-box">
+        <div class="info-title">ℹ️ Über NeonQuest</div>
+        <div class="about-text">
+          <p>Version 1.0 · Season 1</p>
+          <p>Sammle ⭐ Sterne, schalte Waffen frei und dominiere die Rangliste!</p>
+          <p>WASD = Bewegen<br>Maus = Zielen & Schießen<br>1/2/3 = Waffe wechseln<br>P = Pause</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="screen-game" class="screen">
+    <canvas id="gameCanvas"></canvas>
+    <!-- HUD -->
+    <div id="hud">
+      <div id="hud-topleft">
+        <div class="hud-hp-wrap">
+          <div class="hud-hp-bar"><div class="hud-hp-fill" id="hudHp"></div></div>
+          <span id="hudHpText">100</span>
+        </div>
+      </div>
+      <div id="hud-topcenter">
+        <div class="hud-score">⭐ <span id="hudScore">0</span></div>
+        <div class="hud-wave">Welle <span id="hudWave">1</span></div>
+        <div class="hud-timer" id="hudTimer" style="display:none">⏱ <span id="hudTimerVal">2:00</span></div>
+      </div>
+      <div id="hud-topright">
+        <div class="hud-weapon" id="hudWeapon">🔫 Pistole</div>
+        <div class="hud-ammo" id="hudAmmo">∞</div>
+      </div>
+      <div id="hud-bottomleft">
+        <div class="weapon-slots">
+          <div class="wslot" id="ws0" onclick="switchWeapon(0)"><span class="wslot-key">1</span><span class="wslot-icon">🔫</span></div>
+          <div class="wslot" id="ws1" onclick="switchWeapon(1)"><span class="wslot-key">2</span><span class="wslot-icon">🪖</span></div>
+          <div class="wslot" id="ws2" onclick="switchWeapon(2)"><span class="wslot-key">3</span><span class="wslot-icon">⚡</span></div>
+        </div>
+      </div>
+      <div id="hud-bottomright" id="hudMultiplayer" style="display:none">
+        <div class="mp-scoreboard" id="mpScoreboard"></div>
+      </div>
+    </div>
+    <!-- CHAT (Multiplayer) -->
+    <div id="chatBox" style="display:none">
+      <div id="chatMessages"></div>
+      <input type="text" id="chatInput" placeholder="Nachricht..." maxlength="60" />
+    </div>
+    <!-- PAUSE OVERLAY -->
+    <div id="pauseOverlay" style="display:none">
+      <div class="pause-box">
+        <div class="pause-title">PAUSE</div>
+        <button class="menu-btn" onclick="resumeGame()">▶ Weiterspielen</button>
+        <button class="menu-btn" onclick="goToMenu()">🏠 Hauptmenü</button>
+      </div>
+    </div>
+    <!-- DEATH SCREEN -->
+    <div id="deathScreen" style="display:none">
+      <div class="death-box">
+        <div class="death-title">💀 GAME OVER</div>
+        <div class="death-score">Score: <strong id="deathScore">0</strong></div>
+        <div class="death-highscore" id="deathHs"></div>
+        <div class="death-stars">+<span id="deathStars">0</span> ⭐ verdient</div>
+        <button class="btn-start" onclick="startGame()">🔄 Nochmal</button>
+        <button class="menu-btn" onclick="goToMenu()">🏠 Menü</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/state.js"></script>
+  <script src="js/music.js"></script>
+  <script src="js/network.js"></script>
+  <script src="js/shop.js"></script>
+  <script src="js/season.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
